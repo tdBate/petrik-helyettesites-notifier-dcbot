@@ -20,10 +20,10 @@ export function parseSubstitution(data: RootSubstitution) {
 
         const teacher = base_lesson.teachers.map(a => a.name).join(", ");
 
-        let subteacher:string;
+        let subteacher: string;
         if (data.substitution.substituter == null) {
             subteacher = "Elmarad";
-        } else { subteacher= `${data.teacher.firstName} ${data.teacher.lastName}`;}
+        } else { subteacher = `${data.teacher.firstName} ${data.teacher.lastName}`; }
 
         const comment = data.substitution.comment;
 
@@ -37,7 +37,7 @@ export function parseSubstitution(data: RootSubstitution) {
             subteacher: subteacher,
             comment: comment
         } as ShortSubstitution
-    } catch (err) { console.error(err)}
+    } catch (err) { console.error(err) }
 }
 
 //check for empty records
@@ -61,4 +61,20 @@ export function detecChanges(oldData: RootSubstitution[], newData: RootSubstitut
         }
     }
     return addedSubstitutions
+}
+
+export function createMessageText(data: ShortSubstitution): string {
+    const message = `🚨 **Substitution Notice** 🚨
+
+📅 **Date:** ${data.date}
+⏰ **Time:** ${data.time}
+📚 **Lesson(s):** ${data.lessons}
+🎓 **Class/Cohort:** ${data.cohorts}
+🚪 **Classroom:** ${data.classroom}
+
+👤 **Original Teacher:** ${data.teacher}
+🧑‍🏫 **Substitute Teacher:** ${data.subteacher}
+📝 **Comment:** ${data.comment || "None"}`;
+
+    return message;
 }
