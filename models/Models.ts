@@ -59,3 +59,14 @@ export interface Teacher2 {
   lastName: string
   short: string
 }
+
+export interface ShortSubstitution {
+  lessons: string,
+  cohorts: string,
+  date: string,
+  time: string,
+  classroom: string,
+  teacher: string,
+  subteacher: string,
+  comment: string
+}
