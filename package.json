@@ -4,7 +4,7 @@
   "description": "",
   "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "setup":"npm i && mkdir data && touch ./data/servers.json && touch ./data/substitutions.json && echo \"[]\" > ./data/substitutions.json && echo \"[]\" > ./data/servers.json"
   },
   "keywords": [],
   "author": "",

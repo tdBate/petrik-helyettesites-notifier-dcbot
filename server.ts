@@ -24,9 +24,12 @@ async function getData() {
         //check for changes
         if (JSON.stringify(new_substitutionData) != JSON.stringify(substitutionData)) {
             const changes: RootSubstitution[] = detecChanges(substitutionData, new_substitutionData);
+            if (changes.length>10) {throw new Error("Too much new data");}
             for (let i = 0; i < changes.length; i++) {
-                const shortSub: ShortSubstitution = parseSubstitution(changes[i]);
-                sendMessage(shortSub);
+                const shortSub = parseSubstitution(changes[i]);
+                if (shortSub != null) {
+                    sendMessage(shortSub);
+                }
             }
 
             substitutionData = new_substitutionData;
