@@ -2,7 +2,8 @@ import { RootSubstitution, Lesson, Day, Period, Subject, Teacher, Substitution, 
 import { ServerData } from "./models/Models";
 import fs from "node:fs";
 
-export function parseSubstitution(data: RootSubstitution) {
+export function parseSubstitution(data: RootSubstitution):ShortSubstitution {
+    let shortSub:ShortSubstitution;
     try {
         const base_lesson: Lesson = data.lessons[0];
 
@@ -31,7 +32,7 @@ export function parseSubstitution(data: RootSubstitution) {
 
         const comment = data.substitution.comment;
 
-        return {
+        shortSub = {
             lessons: lessonSubject,
             cohorts: cohort,
             date: date,
@@ -40,8 +41,9 @@ export function parseSubstitution(data: RootSubstitution) {
             teacher: teacher,
             subteacher: subteacher,
             comment: comment
-        } as ShortSubstitution
+        }
     } catch (err) { console.error(err); }
+    return shortSub!;
 }
 
 //check for empty records
@@ -64,7 +66,7 @@ export function detecChanges(oldData: RootSubstitution[], newData: RootSubstitut
             addedSubstitutions.push(item);
         }
     }
-    return addedSubstitutions
+    return addedSubstitutions;
 }
 
 export function createMessageText(data: ShortSubstitution): string {
@@ -86,7 +88,8 @@ export function createMessageText(data: ShortSubstitution): string {
 export function isClassImpacted(data: ShortSubstitution, cohort: string): boolean {
     const impactedCohorts: string[] = data.cohorts.split(", ");
 
-    if (impactedCohorts.includes(cohort)) { return true; }
+    if (cohort == "") {return true;}
+    else if (impactedCohorts.includes(cohort)) { return true; }
     return false;
 };
 

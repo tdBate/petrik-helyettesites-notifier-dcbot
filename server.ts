@@ -1,6 +1,6 @@
 import { Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes } from "discord.js";
 import { RootSubstitution, Lesson, Day, Period, Subject, Teacher, Substitution, Teacher2, ShortSubstitution, ServerData } from "./models/Models";
-import { createMessageText, detecChanges, filterData, parseSubstitution, saveServerData } from "./tools";
+import { createMessageText, detecChanges, filterData, isClassImpacted, parseSubstitution, saveServerData } from "./tools";
 import fs from "node:fs";
 import "dotenv/config";
 
@@ -25,7 +25,8 @@ async function getData() {
         if (JSON.stringify(new_substitutionData) != JSON.stringify(substitutionData)) {
             const changes: RootSubstitution[] = detecChanges(substitutionData, new_substitutionData);
             for (let i = 0; i < changes.length; i++) {
-                sendMessage(createMessageText(parseSubstitution(changes[i]) as ShortSubstitution));
+                const shortSub: ShortSubstitution = parseSubstitution(changes[i]);
+                sendMessage(shortSub);
             }
 
             substitutionData = new_substitutionData;
@@ -43,15 +44,14 @@ function setupDiscord() {
 
     const commands = [
         new SlashCommandBuilder()
-            .setName('addtochannel')
-            .setDescription('Adds bot to channel'),
+            .setName('set-output-channel')
+            .setDescription('Sets bot output to current channel'),
         new SlashCommandBuilder()
-            .setName("setclass")
+            .setName("set-class")
             .setDescription("Selects what class to filter")
             .addStringOption(option =>
                 option.setName("class")
-                    .setDescription("Format: 13.e")
-
+                    .setDescription('Format: "13.e" or "all"')
             )
     ].map(command => command.toJSON());
 
@@ -72,9 +72,9 @@ function setupDiscord() {
 
     client.on('interactionCreate', async interaction => {
         if (!interaction.isChatInputCommand()) return;
+        if (!interaction.guildId) { return interaction.reply("Can only be used in a server") }
 
-        if (interaction.commandName == 'addtochannel') {
-            if (!interaction.guildId) { return interaction.reply("Can only be used in a server") }
+        if (interaction.commandName == 'set-output-channel') {
             const serverIndex = serverData.findIndex(item => item.server_id == interaction.guildId);
             if (serverIndex != -1) {
                 serverData[serverIndex].channel_id = interaction.channelId;
@@ -89,8 +89,19 @@ function setupDiscord() {
             saveServerData(serverData);
 
             await interaction.reply('Bot added to channel');
-        } else if (interaction.commandName == "setclass") {
-            const userInput = interaction.options.getString("class");
+        } else if (interaction.commandName == "set-class") {
+            const userInput = interaction.options.getString("class")?.toUpperCase().trim();
+
+            const serverIndex = serverData.findIndex(item => item.server_id == interaction.guildId);
+
+            if (serverIndex != -1) {
+                serverData[serverIndex].cohort = userInput!;
+            } else {
+                return interaction.reply("Error: first set bot output");
+            }
+            saveServerData(serverData);
+            return interaction.reply("Class selected");
+
         }
     });
 
@@ -101,11 +112,13 @@ function setupDiscord() {
     })
 }
 
-function sendMessage(text: string) {
+function sendMessage(data: ShortSubstitution) {
     for (let i = 0; i < serverData.length; i++) {
         client.channels.fetch(serverData[i].channel_id).then(channel => {
             if (channel && channel.isSendable()) {
-                channel.send(text);
+                if (isClassImpacted(data, serverData[i].cohort)) { //check if selected class is impacted
+                    channel.send(createMessageText(data));
+                }
             }
         })
     }
