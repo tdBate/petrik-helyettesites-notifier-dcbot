@@ -2,23 +2,25 @@ import { RootSubstitution, Lesson, Day, Period, Subject, Teacher, Substitution, 
 
 export function parseSubstitution(data: RootSubstitution) {
     try {
-        const base_lesson = data.lessons[0];
+        const base_lesson:Lesson = data.lessons[0];
 
         // lessons
         const lessonSubject = base_lesson.subject.short;
         const cohort = base_lesson.cohorts.join(", ");
-
         const date = data.substitution.date;
-
-
-        // time
-        const startTime = base_lesson.period.startTime.substring(0, 5);
-        const endTime = base_lesson.period.endTime.substring(0, 5);
-        const ido = `${base_lesson.day.name}, ${base_lesson.period.period}. óra (${startTime} - ${endTime})`;
-
         const classroom = base_lesson.classrooms.map(c => c.name || '').join(', ') || "N/A";
-
         const teacher = base_lesson.teachers.map(a => a.name).join(", ");
+
+        let ido = "";
+
+        for (let i = 0; i < data.lessons.length; i++) {
+            const base_lesson:Lesson = data.lessons[i];
+
+            // time
+            const startTime = base_lesson.period.startTime.substring(0, 5);
+            const endTime = base_lesson.period.endTime.substring(0, 5);
+            ido += `${base_lesson.period.period}. óra (${startTime} - ${endTime}) `;
+        }
 
         let subteacher: string;
         if (data.substitution.substituter == null) {
@@ -37,7 +39,7 @@ export function parseSubstitution(data: RootSubstitution) {
             subteacher: subteacher,
             comment: comment
         } as ShortSubstitution
-    } catch (err) { console.error(err) }
+    } catch (err) { console.error(err);}
 }
 
 //check for empty records

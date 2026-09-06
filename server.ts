@@ -9,25 +9,28 @@ const URL_SUBSTITUTIONS: string = "https://filc.petrik.hu/api/timetable/substitu
 let substitutionData: RootSubstitution[];
 
 async function setup() {
-    substitutionData = await JSON.parse(fs.readFileSync("./data/substitutions.json").toString());
+    substitutionData = JSON.parse(fs.readFileSync("./data/substitutions.json").toString());
 }
 
 async function getData() {
-    const response: Response = await fetch(URL_SUBSTITUTIONS);
-    const new_substitutionData: RootSubstitution[] = filterData(JSON.parse(await response.text()).data);
+    try {
+        const response: Response = await fetch(URL_SUBSTITUTIONS);
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
 
-    //check for changes
-    if (JSON.stringify(new_substitutionData) != JSON.stringify(substitutionData)) {
-        const changes: RootSubstitution[] = detecChanges(substitutionData, new_substitutionData);
-        for (let i = 0; i < changes.length; i++) {
-            console.log(parseSubstitution(changes[i]));
-            sendMessage(createMessageText(parseSubstitution(changes[i]) as ShortSubstitution));
+        const new_substitutionData: RootSubstitution[] = filterData(JSON.parse(await response.text()).data);
+
+        //check for changes
+        if (JSON.stringify(new_substitutionData) != JSON.stringify(substitutionData)) {
+            const changes: RootSubstitution[] = detecChanges(substitutionData, new_substitutionData);
+            for (let i = 0; i < changes.length; i++) {
+                sendMessage(createMessageText(parseSubstitution(changes[i]) as ShortSubstitution));
+            }
+
+            substitutionData = new_substitutionData;
+            fs.writeFileSync("./data/substitutions.json", JSON.stringify(substitutionData));
+            console.log("Update detected...");
         }
-
-        substitutionData = new_substitutionData;
-        fs.writeFileSync("./data/substitutions.json", JSON.stringify(substitutionData));
-        console.log("Update detected...");
-    }
+    } catch (err) {console.error(err);}
 }
 
 //discord stuff
@@ -48,7 +51,7 @@ function setupDiscord() {
     })
 }
 
-function sendMessage(text:string) {
+function sendMessage(text: string) {
     client.channels.fetch(channel_id!).then(channel => {
         if (channel && channel.isSendable()) {
             channel.send(text);
@@ -58,8 +61,12 @@ function sendMessage(text:string) {
 
 
 async function main() {
-    setup();
-    getData();
+    await setup();
+    await getData();
+
+    setInterval(() => {
+        getData();
+    }, (1000 * 60) * 5);
 }
 
 setupDiscord();
