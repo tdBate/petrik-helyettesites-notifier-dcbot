@@ -1,8 +1,10 @@
 import { RootSubstitution, Lesson, Day, Period, Subject, Teacher, Substitution, Teacher2, ShortSubstitution } from "./models/Models";
+import { ServerData } from "./models/Models";
+import fs from "node:fs";
 
 export function parseSubstitution(data: RootSubstitution) {
     try {
-        const base_lesson:Lesson = data.lessons[0];
+        const base_lesson: Lesson = data.lessons[0];
 
         // lessons
         const lessonSubject = base_lesson.subject.short;
@@ -14,7 +16,7 @@ export function parseSubstitution(data: RootSubstitution) {
         let ido = "";
 
         for (let i = 0; i < data.lessons.length; i++) {
-            const base_lesson:Lesson = data.lessons[i];
+            const base_lesson: Lesson = data.lessons[i];
 
             // time
             const startTime = base_lesson.period.startTime.substring(0, 5);
@@ -39,7 +41,7 @@ export function parseSubstitution(data: RootSubstitution) {
             subteacher: subteacher,
             comment: comment
         } as ShortSubstitution
-    } catch (err) { console.error(err);}
+    } catch (err) { console.error(err); }
 }
 
 //check for empty records
@@ -79,4 +81,15 @@ export function createMessageText(data: ShortSubstitution): string {
 📝 **Comment:** ${data.comment || "None"}`;
 
     return message;
+}
+
+export function isClassImpacted(data: ShortSubstitution, cohort: string): boolean {
+    const impactedCohorts: string[] = data.cohorts.split(", ");
+
+    if (impactedCohorts.includes(cohort)) { return true; }
+    return false;
+};
+
+export function saveServerData(serverData: ServerData[]) {
+    fs.writeFileSync("./data/servers.json", JSON.stringify(serverData));
 }

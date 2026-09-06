@@ -70,3 +70,9 @@ export interface ShortSubstitution {
   subteacher: string,
   comment: string
 }
+
+export interface ServerData {
+  server_id: string,
+  channel_id: string,
+  cohort: string
+}
