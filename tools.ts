@@ -70,17 +70,14 @@ export function detecChanges(oldData: RootSubstitution[], newData: RootSubstitut
 }
 
 export function createMessageText(data: ShortSubstitution): string {
-    const message = `🚨 **Substitution Notice** 🚨
-
-📅 **Date:** ${data.date}
-⏰ **Time:** ${data.time}
-📚 **Lesson(s):** ${data.lessons}
-🎓 **Class/Cohort:** ${data.cohorts}
-🚪 **Classroom:** ${data.classroom}
-
-👤 **Original Teacher:** ${data.teacher}
-🧑‍🏫 **Substitute Teacher:** ${data.subteacher}
-📝 **Comment:** ${data.comment || "None"}`;
+    const date = new Date(data.date);
+    const weekday = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
+const message = `## **Substitution Notice**
+> *Time*   :: ${date.toLocaleDateString("hu-HU")} **${weekday[date.getDay()]}** @ ${data.time}
+> *Class*  :: ${data.cohorts} (Room: ${data.classroom})
+> *Lesson* :: ${data.lessons}
+> *Staff*  :: **${data.subteacher}** (covering ${data.teacher})
+> *Note*   :: ${data.comment || "None"}`;
 
     return message;
 }
