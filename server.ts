@@ -1,20 +1,24 @@
 import { Client, GatewayIntentBits, SlashCommandBuilder, REST, Routes } from "discord.js";
-import { RootSubstitution, Lesson, Day, Period, Subject, Teacher, Substitution, Teacher2, ShortSubstitution, ServerData } from "./models/Models";
-import { createMessageText, detecChanges, filterData, isClassImpacted, parseSubstitution, saveServerData } from "./tools";
+import { RootSubstitution, ShortSubstitution, ServerData, ShortNews, RootNews } from "./models/Models";
+import { createMessageText, detectSubChanges, filterData, isClassImpacted, parseNews, parseSubstitution, saveServerData, detectNewsChanges, isNewsClassImpacted, createNewsMessageText } from "./tools";
 import fs from "node:fs";
 import "dotenv/config";
 
 //data stuff
 const URL_SUBSTITUTIONS: string = "https://filc.petrik.hu/api/timetable/substitutions";
+const URL_NEWS: string = "https://filc.petrik.hu/api/news/announcements";
+
 let substitutionData: RootSubstitution[];
+let newsData: ShortNews[];
 let serverData: ServerData[];
 
 async function setup() {
     substitutionData = JSON.parse(fs.readFileSync("./data/substitutions.json").toString());
+    newsData = JSON.parse(fs.readFileSync("./data/announcements.json").toString());
     serverData = JSON.parse(fs.readFileSync("./data/servers.json").toString());
 }
 
-async function getData() {
+async function getSubData() {
     try {
         const response: Response = await fetch(URL_SUBSTITUTIONS);
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
@@ -23,7 +27,7 @@ async function getData() {
 
         //check for changes
         if (JSON.stringify(new_substitutionData) != JSON.stringify(substitutionData)) {
-            const changes: RootSubstitution[] = detecChanges(substitutionData, new_substitutionData);
+            const changes: RootSubstitution[] = detectSubChanges(substitutionData, new_substitutionData);
             //if (changes.length>10) {throw new Error("Too much new data");}
             for (let i = 0; i < changes.length; i++) {
                 const shortSub = parseSubstitution(changes[i]);
@@ -34,6 +38,39 @@ async function getData() {
 
             substitutionData = new_substitutionData;
             fs.writeFileSync("./data/substitutions.json", JSON.stringify(substitutionData));
+            console.log("Update detected...");
+        }
+    } catch (err) { console.error(err); }
+}
+
+async function getNewsData() {
+    try {
+        const response: Response = await fetch(URL_NEWS, {
+            method: "GET",
+            headers: {
+                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/114.0.0.0 Safari/537.36',
+                "Cookie": `__Secure-filc.session_token=${process.env.SESSION_TOKEN}`
+            }
+        });
+        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+
+        const new_newsData = (JSON.parse(await response.text()).data).map((item: RootNews) => parseNews(item)) as ShortNews[];
+        if (!new_newsData) { throw new Error("Error in parsing new"); }
+
+        //check for changes
+        if (JSON.stringify(new_newsData) != JSON.stringify(newsData)) {
+            const changes: ShortNews[] = detectNewsChanges(newsData, new_newsData);
+            //if (changes.length>10) {throw new Error("Too much new data");}
+            for (let i = 0; i < changes.length; i++) {
+                const shortNew = changes[i];
+                if (shortNew != null) {
+                    console.log(shortNew);
+                    sendNewsMessage(shortNew);
+                }
+            }
+
+            newsData = new_newsData;
+            fs.writeFileSync("./data/announcements.json", JSON.stringify(newsData));
             console.log("Update detected...");
         }
     } catch (err) { console.error(err); }
@@ -117,23 +154,37 @@ function setupDiscord() {
 
 function sendMessage(data: ShortSubstitution) {
     for (let i = 0; i < serverData.length; i++) {
-        client.channels.fetch(serverData[i].channel_id).then(channel => {
-            if (channel && channel.isSendable()) {
-                if (isClassImpacted(data, serverData[i].cohort)) { //check if selected class is impacted
+        if (isClassImpacted(data, serverData[i].cohort)) { //check if selected class is impacted
+            client.channels.fetch(serverData[i].channel_id).then(channel => {
+                if (channel && channel.isSendable()) {
                     channel.send(createMessageText(data));
                 }
-            }
-        })
+            })
+        }
+    }
+}
+
+function sendNewsMessage(data: ShortNews) {
+    for (let i = 0; i < serverData.length; i++) {
+        if (isNewsClassImpacted(data, serverData[i].cohort)) {
+            client.channels.fetch(serverData[i].channel_id).then(channel => {
+                if (channel && channel.isSendable()) {
+                    channel.send(createNewsMessageText(data));
+                }
+            })
+        }
     }
 }
 
 
 async function main() {
     await setup();
-    await getData();
+    await getSubData();
+    await getNewsData();
 
     setInterval(() => {
-        getData();
+        getSubData();
+        getNewsData();
     }, (1000 * 60) * 5);
 }
 

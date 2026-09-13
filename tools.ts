@@ -1,4 +1,4 @@
-import { RootSubstitution, Lesson, Day, Period, Subject, Teacher, Substitution, Teacher2, ShortSubstitution } from "./models/Models";
+import { RootSubstitution, Lesson, Day, Period, Subject, Teacher, Substitution, Teacher2, ShortSubstitution, ShortNews, RootNews } from "./models/Models";
 import { ServerData } from "./models/Models";
 import fs from "node:fs";
 
@@ -32,7 +32,7 @@ export function parseSubstitution(data: RootSubstitution): ShortSubstitution | n
 
         const comment = data.substitution.comment;
 
-        shortSub = {
+        const shortSub = {
             lessons: lessonSubject,
             cohorts: cohort,
             date: date,
@@ -43,6 +43,19 @@ export function parseSubstitution(data: RootSubstitution): ShortSubstitution | n
             comment: comment
         }
         return shortSub;
+    } catch (err) { console.error(err); return null; }
+}
+
+export function parseNews(data: RootNews): ShortNews | null {
+    try {
+        const shortNew: ShortNews = {
+            title: data.title,
+            content: data.content.map(item => item.content).join("\n"),
+            time: new Date(data.validUntil)
+        };
+
+        return shortNew;
+
     } catch (err) { console.error(err); return null; }
 }
 
@@ -57,7 +70,7 @@ export function filterData(data: RootSubstitution[]): RootSubstitution[] {
 }
 
 
-export function detecChanges(oldData: RootSubstitution[], newData: RootSubstitution[]) {
+export function detectSubChanges(oldData: RootSubstitution[], newData: RootSubstitution[]) {
     let addedSubstitutions: RootSubstitution[] = [];
     for (let i = 0; i < newData.length; i++) {
         const item: RootSubstitution = newData[i];
@@ -69,15 +82,35 @@ export function detecChanges(oldData: RootSubstitution[], newData: RootSubstitut
     return addedSubstitutions;
 }
 
+export function detectNewsChanges(oldData: ShortNews[], newData: ShortNews[]): ShortNews[] {
+    let addedNews: ShortNews[] = [];
+    for (let i = 0; i < newData.length; i++) {
+        const item: ShortNews = newData[i];
+
+        if (!oldData.some((a: ShortNews) => JSON.stringify(a) == JSON.stringify(item))) {
+            addedNews.push(item);
+        }
+    }
+    return addedNews;
+}
+
 export function createMessageText(data: ShortSubstitution): string {
     const date = new Date(data.date);
-    const weekday = ["Sunday","Monday","Tuesday","Wednesday","Thursday","Friday","Saturday"];
-const message = `## **Substitution Notice**
+    const weekday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+    const message = `## **Substitution Notice**
 > *Time*   :: ${date.toLocaleDateString("hu-HU")} **${weekday[date.getDay()]}** @ ${data.time}
 > *Class*  :: ${data.cohorts} (Room: ${data.classroom})
 > *Lesson* :: ${data.lessons}
 > *Staff*  :: **${data.subteacher}** (covering ${data.teacher})
 > *Note*   :: ${data.comment || "None"}`;
+
+    return message;
+}
+
+export function createNewsMessageText(data: ShortNews): string {
+    const message = `## **Substitution Notice**
+> **${data.title}**
+> ${data.content}`;
 
     return message;
 }
@@ -89,6 +122,10 @@ export function isClassImpacted(data: ShortSubstitution, cohort: string): boolea
     else if (impactedCohorts.includes(cohort)) { return true; }
     return false;
 };
+
+export function isNewsClassImpacted(data: ShortNews, cohort: string): boolean {
+    return (cohort == "ALL" || data.content.toUpperCase().includes(cohort) || data.title.toUpperCase().includes(cohort))
+}
 
 export function saveServerData(serverData: ServerData[]) {
     fs.writeFileSync("./data/servers.json", JSON.stringify(serverData));
