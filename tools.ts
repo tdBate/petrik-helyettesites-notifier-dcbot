@@ -8,7 +8,10 @@ export function parseSubstitution(data: RootSubstitution): ShortSubstitution | n
         const base_lesson: Lesson = data.lessons[0];
 
         // lessons
-        const lessonSubject = base_lesson.subject.short;
+        let lessonSubject = "";
+        if (base_lesson.subject) {
+            lessonSubject = base_lesson.subject.short;
+        }
         const cohort = base_lesson.cohorts.join(", ");
         const date = data.substitution.date;
         const classroom = base_lesson.classrooms.map(c => c.name || '').join(', ') || "N/A";
@@ -73,10 +76,10 @@ export function filterData(data: RootSubstitution[]): RootSubstitution[] {
 export function detectSubChanges(oldData: RootSubstitution[], newData: RootSubstitution[]) {
     let addedSubstitutions: RootSubstitution[] = [];
     for (let i = 0; i < newData.length; i++) {
-        const item: RootSubstitution = newData[i];
+        const newItem: RootSubstitution = newData[i];
 
-        if (!oldData.some((a: RootSubstitution) => JSON.stringify(a) == JSON.stringify(item))) {
-            addedSubstitutions.push(item);
+        if (!oldData.some((oldItem: RootSubstitution) => oldItem.substitution.id == newItem.substitution.id)) {
+            addedSubstitutions.push(newItem);
         }
     }
     return addedSubstitutions;
@@ -100,7 +103,7 @@ export function createMessageText(data: ShortSubstitution): string {
     const message = `## **Substitution Notice**
 > *Time*   :: ${date.toLocaleDateString("hu-HU")} **${weekday[date.getDay()]}** @ ${data.time}
 > *Class*  :: ${data.cohorts} (Room: ${data.classroom})
-> *Lesson* :: ${data.lessons}
+> *Lesson* :: **${data.lessons}**
 > *Staff*  :: **${data.subteacher}** (covering ${data.teacher})
 > *Note*   :: ${data.comment || "None"}`;
 
@@ -108,9 +111,12 @@ export function createMessageText(data: ShortSubstitution): string {
 }
 
 export function createNewsMessageText(data: ShortNews): string {
-    const message = `## **Substitution Notice**
-> **${data.title}**
-> ${data.content}`;
+    let message = `## **Substitution Notice**
+> **${data.title}**`;
+
+    if (data.content) {
+        message += `\n> ${data.content}`
+    }
 
     return message;
 }
