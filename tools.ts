@@ -1,3 +1,4 @@
+import { createConnection } from "node:net";
 import { RootSubstitution, Lesson, Day, Period, Subject, Teacher, Substitution, Teacher2, ShortSubstitution, ShortNews, RootNews } from "./models/Models";
 import { ServerData } from "./models/Models";
 import fs from "node:fs";
@@ -8,10 +9,10 @@ export function parseSubstitution(data: RootSubstitution): ShortSubstitution | n
         const base_lesson: Lesson = data.lessons[0];
 
         // lessons
-        let lessonSubject = "";
-        if (base_lesson.subject) {
+        let lessonSubject = "N/A";
+        try {
             lessonSubject = base_lesson.subject.short;
-        }
+        } catch (err) { console.error(err); }
         const cohort = base_lesson.cohorts.join(", ");
         const date = data.substitution.date;
         const classroom = base_lesson.classrooms.map(c => c.name || '').join(', ') || "N/A";
