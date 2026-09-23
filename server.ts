@@ -64,7 +64,6 @@ async function getNewsData() {
             for (let i = 0; i < changes.length; i++) {
                 const shortNew = changes[i];
                 if (shortNew != null) {
-                    console.log(shortNew);
                     sendNewsMessage(shortNew);
                 }
             }

@@ -1,10 +1,10 @@
-import { createConnection } from "node:net";
 import { RootSubstitution, Lesson, Day, Period, Subject, Teacher, Substitution, Teacher2, ShortSubstitution, ShortNews, RootNews } from "./models/Models";
 import { ServerData } from "./models/Models";
 import fs from "node:fs";
 
+const weekday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
+
 export function parseSubstitution(data: RootSubstitution): ShortSubstitution | null {
-    let shortSub: ShortSubstitution;
     try {
         const base_lesson: Lesson = data.lessons[0];
 
@@ -18,16 +18,7 @@ export function parseSubstitution(data: RootSubstitution): ShortSubstitution | n
         const classroom = base_lesson.classrooms.map(c => c.name || '').join(', ') || "N/A";
         const teacher = base_lesson.teachers.map(a => a.name).join(", ");
 
-        let ido = "";
-
-        for (let i = 0; i < data.lessons.length; i++) {
-            const base_lesson: Lesson = data.lessons[i];
-
-            // time
-            const startTime = base_lesson.period.startTime.substring(0, 5);
-            const endTime = base_lesson.period.endTime.substring(0, 5);
-            ido += `${base_lesson.period.period}. óra (${startTime} - ${endTime}) `;
-        }
+        let ido = data.lessons.map(a => a.period.period).sort((a, b) => a - b).join("-") + " óra";
 
         let subteacher: string;
         if (data.substitution.substituter == null) {
@@ -65,12 +56,7 @@ export function parseNews(data: RootNews): ShortNews | null {
 
 //check for empty records
 export function filterData(data: RootSubstitution[]): RootSubstitution[] {
-    for (let i = data.length - 1; i >= 0; i--) {
-        if (data[i].lessons.length == 0) {
-            data.splice(i, 1);
-        };
-    }
-    return data;
+    return data.filter(item => item.lessons && item.lessons.length > 0);
 }
 
 
@@ -100,7 +86,6 @@ export function detectNewsChanges(oldData: ShortNews[], newData: ShortNews[]): S
 
 export function createMessageText(data: ShortSubstitution): string {
     const date = new Date(data.date);
-    const weekday = ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"];
     const message = `## **Substitution Notice**
 > *Time*   :: ${date.toLocaleDateString("hu-HU")} **${weekday[date.getDay()]}** @ ${data.time}
 > *Class*  :: ${data.cohorts} (Room: ${data.classroom})
@@ -112,12 +97,14 @@ export function createMessageText(data: ShortSubstitution): string {
 }
 
 export function createNewsMessageText(data: ShortNews): string {
-    let message = `## **Substitution Notice**
+    let message = `## **Announcements Notice**
 > **${data.title}**`;
 
     if (data.content) {
-        message += `\n> ${data.content}`
+        message += `\n > ${data.content.replaceAll("\n", "\n > ")}`
     }
+
+    message += `\n > *${data.time.toLocaleDateString("hu-HU")} ${weekday[data.time.getDay()]}*`;
 
     return message;
 }
@@ -131,7 +118,11 @@ export function isClassImpacted(data: ShortSubstitution, cohort: string): boolea
 };
 
 export function isNewsClassImpacted(data: ShortNews, cohort: string): boolean {
-    return (cohort == "ALL" || data.content.toUpperCase().includes(cohort) || data.title.toUpperCase().includes(cohort))
+    const title = data.title.toUpperCase()
+    const content = data.content.toUpperCase();
+
+    const cohortWithoutDot = cohort.replace(".", "");
+    return (cohort == "ALL" || content.includes(cohort) || title.includes(cohort) || content.includes(cohortWithoutDot) || title.includes(cohortWithoutDot));
 }
 
 export function saveServerData(serverData: ServerData[]) {
