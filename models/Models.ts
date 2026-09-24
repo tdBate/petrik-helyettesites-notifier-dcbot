@@ -1,108 +1,107 @@
 export interface RootSubstitution {
-  lessons: Lesson[]
-  substitution: Substitution
-  teacher: Teacher2
+    lessons: Lesson[];
+    substitution: Substitution;
+    teacher: Teacher2;
 }
 
-
 export interface Lesson {
-  classrooms: any[]
-  cohorts: string[]
-  day: Day
-  id: string
-  period: Period
-  periodsPerWeek: number
-  subject: Subject
-  teachers: Teacher[]
-  termDefinitionId: string
-  weeksDefinitionId: string
+    classrooms: any[];
+    cohorts: string[];
+    day: Day;
+    id: string;
+    period: Period;
+    periodsPerWeek: number;
+    subject: Subject;
+    teachers: Teacher[];
+    termDefinitionId: string;
+    weeksDefinitionId: string;
 }
 
 export interface Day {
-  days: string[]
-  id: string
-  name: string
-  short: string
-  createdAt: string
-  updatedAt: string
+    days: string[];
+    id: string;
+    name: string;
+    short: string;
+    createdAt: string;
+    updatedAt: string;
 }
 
 export interface Period {
-  endTime: string
-  id: string
-  period: number
-  startTime: string
+    endTime: string;
+    id: string;
+    period: number;
+    startTime: string;
 }
 
 export interface Subject {
-  id: string
-  name: string
-  short: string
+    id: string;
+    name: string;
+    short: string;
 }
 
 export interface Teacher {
-  id: string
-  name: string
-  short: string
+    id: string;
+    name: string;
+    short: string;
 }
 
 export interface Substitution {
-  comment: string
-  date: string
-  id: string
-  substituter: string
+    comment: string;
+    date: string;
+    id: string;
+    substituter: string;
 }
 
 export interface Teacher2 {
-  firstName: string
-  id: string
-  lastName: string
-  short: string
+    firstName: string;
+    id: string;
+    lastName: string;
+    short: string;
 }
 
 export interface ShortSubstitution {
-  lessons: string,
-  cohorts: string,
-  date: string,
-  time: string,
-  classroom: string,
-  teacher: string,
-  subteacher: string,
-  comment: string
+    lessons: string;
+    cohorts: string;
+    date: string;
+    time: string;
+    classroom: string;
+    teacher: string;
+    subteacher: string;
+    comment: string;
 }
 
 export interface ServerData {
-  server_id: string,
-  channel_id: string,
-  cohort: string
+    server_id: string;
+    channel_id: string;
+    cohort: string;
 }
 
 export interface ShortNews {
-  title: string,
-  content: string,
-  time: Date
+    title: string;
+    content: string;
+    time: Date;
 }
 
 export interface RootNews {
-  author: Author
-  authorId: string
-  content: Content[]
-  createdAt: string
-  id: string
-  title: string
-  updatedAt: string
-  validFrom: string
-  validUntil: string
-  cohortIds: any[]
+    author: Author;
+    authorId: string;
+    content: Content[];
+    createdAt: string;
+    id: string;
+    title: string;
+    updatedAt: string;
+    validFrom: string;
+    validUntil: string;
+    cohortIds: any[];
 }
 
 export interface Author {
-  id: string
-  image: any
-  name: string
+    id: string;
+    image: any;
+    name: string;
 }
 
 export interface Content {
-  type: string
-  content: string
+    type: string;
+    content: string;
 }

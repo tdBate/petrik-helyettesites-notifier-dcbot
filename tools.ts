@@ -12,18 +12,26 @@ export function parseSubstitution(data: RootSubstitution): ShortSubstitution | n
         let lessonSubject = "N/A";
         try {
             lessonSubject = base_lesson.subject.short;
-        } catch (err) { console.error(err); }
+        } catch (err) {
+            console.error(err);
+        }
         const cohort = base_lesson.cohorts.join(", ");
         const date = data.substitution.date;
-        const classroom = base_lesson.classrooms.map(c => c.name || '').join(', ') || "N/A";
+        const classroom = base_lesson.classrooms.map(c => c.name || "").join(", ") || "N/A";
         const teacher = base_lesson.teachers.map(a => a.name).join(", ");
 
-        let ido = data.lessons.map(a => a.period.period).sort((a, b) => a - b).join("-") + " óra";
+        let ido =
+            data.lessons
+                .map(a => a.period.period)
+                .sort((a, b) => a - b)
+                .join("-") + " óra";
 
         let subteacher: string;
         if (data.substitution.substituter == null) {
             subteacher = "Elmarad";
-        } else { subteacher = `${data.teacher.firstName} ${data.teacher.lastName}`; }
+        } else {
+            subteacher = `${data.teacher.firstName} ${data.teacher.lastName}`;
+        }
 
         const comment = data.substitution.comment;
 
@@ -36,9 +44,12 @@ export function parseSubstitution(data: RootSubstitution): ShortSubstitution | n
             teacher: teacher,
             subteacher: subteacher,
             comment: comment
-        }
+        };
         return shortSub;
-    } catch (err) { console.error(err); return null; }
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
 }
 
 export function parseNews(data: RootNews): ShortNews | null {
@@ -50,15 +61,16 @@ export function parseNews(data: RootNews): ShortNews | null {
         };
 
         return shortNew;
-
-    } catch (err) { console.error(err); return null; }
+    } catch (err) {
+        console.error(err);
+        return null;
+    }
 }
 
 //check for empty records
 export function filterData(data: RootSubstitution[]): RootSubstitution[] {
     return data.filter(item => item.lessons && item.lessons.length > 0);
 }
-
 
 export function detectSubChanges(oldData: RootSubstitution[], newData: RootSubstitution[]) {
     let addedSubstitutions: RootSubstitution[] = [];
@@ -101,7 +113,7 @@ export function createNewsMessageText(data: ShortNews): string {
 > **${data.title}**`;
 
     if (data.content) {
-        message += `\n > ${data.content.replaceAll("\n", "\n > ")}`
+        message += `\n > ${data.content.replaceAll("\n", "\n > ")}`;
     }
 
     message += `\n > *${data.time.toLocaleDateString("hu-HU")} ${weekday[data.time.getDay()]}*`;
@@ -112,17 +124,20 @@ export function createNewsMessageText(data: ShortNews): string {
 export function isClassImpacted(data: ShortSubstitution, cohort: string): boolean {
     const impactedCohorts: string[] = data.cohorts.split(", ");
 
-    if (cohort == "ALL") { return true; }
-    else if (impactedCohorts.includes(cohort)) { return true; }
+    if (cohort == "ALL") {
+        return true;
+    } else if (impactedCohorts.includes(cohort)) {
+        return true;
+    }
     return false;
-};
+}
 
 export function isNewsClassImpacted(data: ShortNews, cohort: string): boolean {
-    const title = data.title.toUpperCase()
+    const title = data.title.toUpperCase();
     const content = data.content.toUpperCase();
 
     const cohortWithoutDot = cohort.replace(".", "");
-    return (cohort == "ALL" || content.includes(cohort) || title.includes(cohort) || content.includes(cohortWithoutDot) || title.includes(cohortWithoutDot));
+    return cohort == "ALL" || content.includes(cohort) || title.includes(cohort) || content.includes(cohortWithoutDot) || title.includes(cohortWithoutDot);
 }
 
 export function saveServerData(serverData: ServerData[]) {
