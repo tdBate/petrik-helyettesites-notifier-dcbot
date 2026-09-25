@@ -89,7 +89,11 @@ export function detectNewsChanges(oldData: ShortNews[], newData: ShortNews[]): S
     for (let i = 0; i < newData.length; i++) {
         const item: ShortNews = newData[i];
 
-        if (!oldData.some((a: ShortNews) => JSON.stringify(a) == JSON.stringify(item))) {
+        if (
+            !oldData.some((a: ShortNews) => {
+                return a.title == item.title && a.content == item.content && new Date(a.time).getTime() == item.time.getTime();
+            })
+        ) {
             addedNews.push(item);
         }
     }
@@ -110,13 +114,13 @@ export function createMessageText(data: ShortSubstitution): string {
 
 export function createNewsMessageText(data: ShortNews): string {
     let message = `## **Announcements Notice**
-> **${data.title}**`;
+>>> **${data.title}**`;
 
     if (data.content) {
-        message += `\n > ${data.content.replaceAll("\n", "\n > ")}`;
+        message += `\n${data.content}`;
     }
 
-    message += `\n > *${data.time.toLocaleDateString("hu-HU")} ${weekday[data.time.getDay()]}*`;
+    message += `\n*${data.time.toLocaleDateString("en-CA")} ${weekday[data.time.getDay()]}*`;
 
     return message;
 }
@@ -137,7 +141,7 @@ export function isNewsClassImpacted(data: ShortNews, cohort: string): boolean {
     const content = data.content.toUpperCase();
 
     const cohortWithoutDot = cohort.replace(".", "");
-    return cohort == "ALL" || content.includes(cohort) || title.includes(cohort) || content.includes(cohortWithoutDot) || title.includes(cohortWithoutDot);
+    return (cohort == "ALL" || content.includes(cohort) || title.includes(cohort) || content.includes(cohortWithoutDot) || title.includes(cohortWithoutDot)) && cohort != "";
 }
 
 export function saveServerData(serverData: ServerData[]) {
